@@ -1,4 +1,4 @@
-module Turtle(runCommands,
+module Turtskell(runCommands,
               TurtleCommand(Forward,
                             Backward,
                             Turn,
