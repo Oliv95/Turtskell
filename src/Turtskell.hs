@@ -10,11 +10,13 @@ module Turtskell(runCommands,
 import Graphics.Gloss 
 import Control.Monad.State 
 
+
 type Angle = Float 
 type Coordinate = Float 
 type Length = Float 
 type Position = (Coordinate,Coordinate) 
 type TurtleState = (Angle,Position) -- Angle,(X,Y)
+type Brush = (Bool,Color,Int) --Brush down, color, thinkness
 
 data TurtleCommand = Forward  Length     |
                      Backward Length     |
@@ -24,7 +26,8 @@ data TurtleCommand = Forward  Length     |
                      Save                |
                      Restore
                      deriving(Read,Eq,Show)
-                    
+
+
 runCommands :: [TurtleCommand] -> IO ()
 runCommands tc = display window background (evaluate tc)
     where window = InWindow "Dank Turtle" (600,600) (0,0)
@@ -33,7 +36,7 @@ runCommands tc = display window background (evaluate tc)
 
 evaluate :: [TurtleCommand] -> Picture
 evaluate tc     = Pictures p
-    where p = fst $ snd $ runState (chainCommands tc) ([],initTurtle)
+    where p = fst $ snd $ runState (chainCommands tc) initState
 
 
 commandToAction :: TurtleCommand -> State ([Picture],Turtle) ()
@@ -55,10 +58,12 @@ data Turtle = Turtle {
               angle :: Angle
              ,pos   :: Position
              ,stack :: [TurtleState]
+             --,brush :: Brush
               } deriving (Read,Eq,Show)
 
 
-initTurtle = Turtle 0 (0,0) []
+initTurtle = Turtle 0 (0,0) [] --(True,black,1)
+initState = ([],initTurtle)
 
 pop :: [a] -> (a,[a])
 pop (x:xs) = (x,xs)
@@ -66,6 +71,8 @@ pop _      = error "pop empty stack"
 
 push :: a -> [a] -> [a]
 push a xs = (a:xs)
+
+
 
 restore :: State ([Picture],Turtle) ()
 restore =  state $ \(p,t) -> let ((newAngle,newPos), newStack) = pop $ stack t
@@ -80,8 +87,8 @@ save = state $ \(p,t) -> let currentState = (angle t, pos t) --current Turtle st
 
 
 turn :: Angle -> State ([Picture],Turtle) ()
-turn alfa = state $ \(p,t) -> let newAngle = angle t + alfa
-                                  newT = Turtle newAngle (pos t) (stack t)
+turn alpha = state $ \(p,t) -> let newAngle = angle t + alpha
+                                   newT = Turtle newAngle (pos t) (stack t)
              in ((),(p,newT))
 
 
@@ -106,6 +113,20 @@ sety y = state $ \(p,t) -> let (x,_ ) = pos t
                                newPos = (x,y)
                                newT   = Turtle (angle t) newPos (stack t)
           in ((),(p,newT))
+
+setAngle :: Angle -> State ([Picture],Turtle) ()
+setAngle alpha = state $ \(p,t) -> let newT   = Turtle alpha (pos t) (stack t)
+          in ((),(p,newT))
+
+getx :: State ([Picture],Turtle) Coordinate
+getx = state $ \(p,t) -> let (x,_) = pos t in (x,(p,t))
+
+gety :: State ([Picture],Turtle) Coordinate
+gety = state $ \(p,t) -> let (_,y) = pos t in (y,(p,t))
+
+getAngle :: State ([Picture],Turtle) Angle
+getAngle = state $ \(p,t) -> let alpha = angle t
+            in (alpha,(p,t))
 
 computePath :: Position -> Length -> Angle -> [Position]
 computePath (x,y) length angle = [(x,y),(x+adjacent,y+opposite)]
