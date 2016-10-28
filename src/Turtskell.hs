@@ -15,7 +15,7 @@ type Angle = Float
 type Coordinate = Float 
 type Length = Float 
 type Position = (Coordinate,Coordinate) 
-type TurtleState = (Angle,Position) -- Angle,(X,Y)
+type TurtleState = (Angle,Position,Brush) -- Angle,(X,Y),Bursh
 type Brush = (Bool,Color,Int) --Brush down, color, thinkness
 
 data TurtleCommand = Forward  Length     |
@@ -53,16 +53,15 @@ commandToAction (Restore   ) = restore
 chainCommands :: [TurtleCommand] -> State ([Picture],Turtle) ()
 chainCommands cmds = foldr (>>) (return ()) (map commandToAction cmds)
 
-
 data Turtle = Turtle {
               angle :: Angle
              ,pos   :: Position
+             ,brush :: Brush
              ,stack :: [TurtleState]
-             --,brush :: Brush
-              } deriving (Read,Eq,Show)
+              } deriving (Eq,Show)
 
 
-initTurtle = Turtle 0 (0,0) [] --(True,black,1)
+initTurtle = Turtle 0 (0,0) (True,black,1) [] 
 initState = ([],initTurtle)
 
 pop :: [a] -> (a,[a])
@@ -73,22 +72,21 @@ push :: a -> [a] -> [a]
 push a xs = (a:xs)
 
 
-
 restore :: State ([Picture],Turtle) ()
-restore =  state $ \(p,t) -> let ((newAngle,newPos), newStack) = pop $ stack t
-                                 newT = Turtle newAngle newPos newStack
+restore =  state $ \(p,t) -> let ((newAngle,newPos,newBrush),newStack) = pop $ stack t
+                                 newT = Turtle newAngle newPos newBrush newStack 
             in  ((),(p,newT))
 
 save :: State ([Picture],Turtle) ()
-save = state $ \(p,t) -> let currentState = (angle t, pos t) --current Turtle state (position)
-                             newT = Turtle (angle t) (pos t) 
+save = state $ \(p,t) -> let currentState = (angle t, pos t, brush t) --current Turtle state (position)
+                             newT = Turtle (angle t) (pos t) (brush t) 
                                      (push currentState (stack t)) --Push current state onto stack
         in ((),(p,newT))
 
 
 turn :: Angle -> State ([Picture],Turtle) ()
 turn alpha = state $ \(p,t) -> let newAngle = angle t + alpha
-                                   newT = Turtle newAngle (pos t) (stack t)
+                                   newT = Turtle newAngle (pos t) (brush t) (stack t)
              in ((),(p,newT))
 
 
@@ -96,7 +94,7 @@ forward :: Length -> State ([Picture],Turtle) ()
 forward l = state $ \(p,t) -> let path   = computePath (pos t) l (angle t)
                                   newP   = (line path) : p
                                   newPos = path !! 1 --new turtle is at the end of the line
-                                  newT   = Turtle (angle t) newPos (stack t)
+                                  newT   = Turtle (angle t) newPos (brush t) (stack t)
              in ((),(newP,newT))
 
 backward :: Length -> State ([Picture],Turtle) ()
@@ -105,17 +103,17 @@ backward l = turn 180 >> forward l
 setx :: Coordinate -> State ([Picture],Turtle) ()
 setx x = state $ \(p,t) -> let (_,y ) = pos t
                                newPos = (x,y)
-                               newT   = Turtle (angle t) newPos (stack t)
+                               newT   = Turtle (angle t) newPos (brush t) (stack t)
           in ((),(p,newT))
 
 sety :: Coordinate -> State ([Picture],Turtle) ()
 sety y = state $ \(p,t) -> let (x,_ ) = pos t
                                newPos = (x,y)
-                               newT   = Turtle (angle t) newPos (stack t)
+                               newT   = Turtle (angle t) newPos (brush t) (stack t)
           in ((),(p,newT))
 
 setAngle :: Angle -> State ([Picture],Turtle) ()
-setAngle alpha = state $ \(p,t) -> let newT   = Turtle alpha (pos t) (stack t)
+setAngle alpha = state $ \(p,t) -> let newT   = Turtle alpha (pos t) (brush t) (stack t)
           in ((),(p,newT))
 
 getx :: State ([Picture],Turtle) Coordinate
@@ -133,4 +131,4 @@ computePath (x,y) length angle = [(x,y),(x+adjacent,y+opposite)]
     where adjacent = length * cos(radians)
           opposite = length * sin(radians)
           radians  = angleToRadian angle
-angleToRadian = (* (pi/180))
+          angleToRadian = (* (pi/180))
