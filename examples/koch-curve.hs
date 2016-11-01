@@ -1,6 +1,6 @@
 module Main(main) where
 
-import Turtskell
+import Graphics.Turtskell
 
 main :: IO()
 main = runCommands (string2Commands (nth 6))

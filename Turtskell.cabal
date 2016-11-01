@@ -17,7 +17,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Turtskell
+  exposed-modules:     Graphics.Turtskell
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9, gloss >=1.10 && <1.11, mtl >=2.2 && <2.3

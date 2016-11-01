@@ -1,4 +1,4 @@
-module Turtskell(runCommands,
+module Graphics.Turtskell(runCommands,
               TurtleCommand(Forward,
                             Backward,
                             Turn,
