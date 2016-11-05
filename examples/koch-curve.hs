@@ -6,9 +6,9 @@ main :: IO()
 main = runCommands (string2Commands (nth 6))
 
 -- Translate a Char to a TurtleCommand
-char2TC 'F' = Forward 5
-char2TC '+' = Turn 90
-char2TC '-' = Turn 270
+char2TC 'F' = forward 5
+char2TC '+' = turn 90
+char2TC '-' = turn 270
 
 --Translate a String to a [TurtleCommand]
 string2Commands s = map char2TC s
